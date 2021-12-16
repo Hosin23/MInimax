@@ -17,14 +17,14 @@ public class Board {
         Scanner sc = new Scanner(System.in);
         while(!isGameOver()){
             if(side == 1){
-                System.out.println("Your turn:");
+                System.out.println("Player's turn:");
                 int x = sc.nextInt();
                 int y = sc.nextInt();
                 setStone(x, y);
             }else{
                 System.out.println("Computer's turn:");
                 long start = System.currentTimeMillis();
-                int[] p = aibo.getMoveFJAB(this);
+                int[] p = aibo.getMoveFJABCut(this);
                 setStone(p[0], p[1]);
                 long end = System.currentTimeMillis();
                 System.out.printf("Time: %.4f s\n", (end - start) / 1000.0);
