@@ -21,17 +21,17 @@ public class Computer {
         }
     }
 
-    public int minimax(int depth, boolean isMax, Board playBoard){
-        int boardValue = evaluate(playBoard.board);
-        if(boardValue == 100 || boardValue == -100 || depth == 0 || playBoard.isFull()) return boardValue;
+    public int minimax(int depth, boolean isMax, int[][] playBoard){
+        int boardValue = evaluate(playBoard);
+        if(boardValue == 100 || boardValue == -100 || depth == 0 || checkFull(playBoard)) return boardValue;
         if(isMax){
             int maxValue = Integer.MIN_VALUE;
             for(int i = 0; i < range; i++) {
                 for(int j = 0; j < range; j++){
-                    if(playBoard.board[i][j] == 0){
-                        playStone(i, j, 1, playBoard);
+                    if(playBoard[i][j] == 0){
+                        playBoard[i][j] = 1;
                         maxValue = Math.max(maxValue, minimax(depth - 1, false, playBoard));
-                        playStone(i, j, 0, playBoard);
+                        playBoard[i][j] = 0;
                     }
                 }
             }
@@ -40,10 +40,10 @@ public class Computer {
             int minValue = Integer.MAX_VALUE;
             for(int i = 0; i < range; i++) {
                 for(int j = 0; j < range; j++){
-                    if(playBoard.board[i][j] == 0){
-                        playStone(i, j, -1, playBoard);
+                    if(playBoard[i][j] == 0){
+                        playBoard[i][j] = -1;
                         minValue = Math.min(minValue, minimax(depth - 1, true, playBoard));
-                        playStone(i, j, 0, playBoard);
+                        playBoard[i][j] = 0;
                     }
                 }
             }
@@ -51,17 +51,26 @@ public class Computer {
         }
     }
 
-    public int minimaxAB(int depth, boolean isMax, Board playBoard, int alpha, int beta){
-        int boardValue = evaluate2(playBoard.board);
-        if(boardValue == 100 || boardValue == -100 || depth == 0 || playBoard.isFull()) return boardValue;
+    private boolean checkFull(int[][] b){
+        for(int i = 0; i < b.length; i++){
+            for(int j = 0; j < b.length; j++){
+                if(b[i][j] == 0) return false;
+            }
+        }
+        return true;
+    }
+
+    public int minimaxAB(int depth, boolean isMax, int[][] playBoard, int alpha, int beta){
+        int boardValue = evaluate2(playBoard);
+        if(boardValue == 100 || boardValue == -100 || depth == 0 || checkFull(playBoard)) return boardValue;
         if(isMax){
             int maxValue = Integer.MIN_VALUE;
             for(int i = 0; i < range; i++) {
                 for(int j = 0; j < range; j++){
-                    if(playBoard.board[i][j] == 0){
-                        playStone(i, j, 1, playBoard);
+                    if(playBoard[i][j] == 0){
+                        playBoard[i][j] = 1;
                         maxValue = Math.max(maxValue, minimaxAB(depth - 1, false, playBoard, alpha, beta));
-                        playStone(i, j, 0, playBoard);
+                        playBoard[i][j] = 0;
                         if(maxValue >= beta)
                             break;
                         alpha = Math.max(alpha, maxValue);
@@ -76,10 +85,10 @@ public class Computer {
             int minValue = Integer.MAX_VALUE;
             for(int i = 0; i < range; i++) {
                 for(int j = 0; j < range; j++){
-                    if(playBoard.board[i][j] == 0){
-                        playStone(i, j, -1, playBoard);
+                    if(playBoard[i][j] == 0){
+                        playBoard[i][j] = -1;
                         minValue = Math.min(minValue, minimaxAB(depth - 1, true, playBoard, alpha, beta));
-                        playStone(i, j, 0, playBoard);
+                        playBoard[i][j] = 0;
                         if(minValue <= alpha)
                             break;
                         beta = Math.max(beta, minValue);
@@ -309,7 +318,7 @@ public class Computer {
             for(int j = 0; j < range; j++){
                 if(playBoard.board[i][j] == 0){
                     playStone(i, j,-1, playBoard);
-                    int score = minimax(10, true, playBoard);
+                    int score = minimax(9, true, playBoard.board);
                     playStone(i, j, 0, playBoard);
                     if(score < min){
                         min = score;
@@ -330,7 +339,7 @@ public class Computer {
             for(int j = 0; j < range; j++){
                 if(playBoard.board[i][j] == 0){
                     playStone(i, j,-1, playBoard);
-                    int score = minimaxAB(10, true, playBoard, Integer.MIN_VALUE, Integer.MAX_VALUE);
+                    int score = minimaxAB(9, true, playBoard.board, Integer.MIN_VALUE, Integer.MAX_VALUE);
                     playStone(i, j, 0, playBoard);
                     if(score < min){
                         min = score;
@@ -351,7 +360,7 @@ public class Computer {
             for(int j = 0; j < range; j++){
                 if(playBoard.board[i][j] == 0){
                     playStone(i, j,-1, playBoard);
-                    int score = FJ_POOL.invoke(new minimaxTask(10, true, playBoard.board));
+                    int score = FJ_POOL.invoke(new minimaxTask(9, true, playBoard.board));
                     playStone(i, j, 0, playBoard);
                     if(score < min){
                         min = score;
@@ -364,6 +373,28 @@ public class Computer {
 
         return result;
     }
+
+    public int[] getMoveFJCut(Board playBoard){
+        int[] result = new int[2];
+        int min = Integer.MAX_VALUE;
+        for(int i = 0; i < range; i++){
+            for(int j = 0; j < range; j++){
+                if(playBoard.board[i][j] == 0){
+                    playStone(i, j,-1, playBoard);
+                    int score = FJ_POOL.invoke(new minimaxTaskCut(9, true, playBoard.board));
+                    playStone(i, j, 0, playBoard);
+                    if(score < min){
+                        min = score;
+                        result[0] = i;
+                        result[1] = j;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
     public int[] getMoveFJAB(Board playBoard){
         int[] result = new int[2];
         int min = Integer.MAX_VALUE;
@@ -371,7 +402,29 @@ public class Computer {
             for(int j = 0; j < range; j++){
                 if(playBoard.board[i][j] == 0){
                     playStone(i, j,-1, playBoard);
-                    int score = FJ_POOL.invoke(new minimaxTaskAB(10, true,
+                    int score = FJ_POOL.invoke(new minimaxTaskAB(9, true,
+                            Integer.MIN_VALUE, Integer.MAX_VALUE, playBoard.board));
+                    playStone(i, j, 0, playBoard);
+                    if(score < min){
+                        min = score;
+                        result[0] = i;
+                        result[1] = j;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public int[] getMoveFJABCut(Board playBoard){
+        int[] result = new int[2];
+        int min = Integer.MAX_VALUE;
+        for(int i = 0; i < range; i++){
+            for(int j = 0; j < range; j++){
+                if(playBoard.board[i][j] == 0){
+                    playStone(i, j,-1, playBoard);
+                    int score = FJ_POOL.invoke(new minimaxTaskABCut(9, true,
                             Integer.MIN_VALUE, Integer.MAX_VALUE, playBoard.board));
                     playStone(i, j, 0, playBoard);
                     if(score < min){
@@ -387,7 +440,7 @@ public class Computer {
     }
 
     private class minimaxTask extends RecursiveTask<Integer>{
-        private static final int SEQUENTIAL_CUTOFF = 5;
+        private static final int SEQUENTIAL_CUTOFF = 9;
         private int depth;
         private boolean isMax;
         private int[][] playBoard;
@@ -555,6 +608,206 @@ public class Computer {
                             if(playBoard[i][j] == 0){
                                 playBoard[i][j] = -1;
                                 threads.add(new minimaxTaskAB(depth - 1, true, alpha, beta, playBoard));
+                                playBoard[i][j] = 0;
+                            }
+                        }
+                    }
+                    for(int i = 0; i < threads.size() - 1; i++){
+                        threads.get(i).fork();
+                    }
+                    int last = threads.get(threads.size() - 1).compute();
+                    minValue = Math.min(minValue, last);
+                    if(minValue <= alpha){
+                        return minValue;
+                    }else{
+                        beta = Math.max(beta, minValue);
+                        for(int i = 0; i < threads.size() - 1; i++){
+                            int cur = threads.get(i).join();
+                            minValue = Math.min(minValue, cur);
+                            if(minValue <= alpha)
+                                break;
+                            beta = Math.max(beta, minValue);
+                        }
+                        return minValue;
+                    }
+
+                }
+            }
+        }
+    }
+
+    private class minimaxTaskCut extends RecursiveTask<Integer>{
+        private static final int SEQUENTIAL_CUTOFF = 2;
+        private int depth;
+        private boolean isMax;
+        private int[][] playBoard;
+        private int boardValue;
+
+        public minimaxTaskCut(int d, boolean m, int[][] p){
+            depth = d;
+            isMax = m;
+            playBoard = copyBoard(p);
+            boardValue = evaluate2(playBoard);
+        }
+
+        private int[][] copyBoard(int[][] p){
+            int[][] result = new int[p.length][p.length];
+            for(int i = 0; i < result.length; i++){
+                for(int j = 0; j < result.length; j++){
+                    result[i][j] = p[i][j];
+                }
+            }
+            return result;
+        }
+
+        private boolean isFull(int[][] b){
+            for(int i = 0; i < b.length; i++){
+                for(int j = 0; j < b.length; j++){
+                    if(b[i][j] == 0) return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        protected Integer compute() {
+            if(depth < SEQUENTIAL_CUTOFF){
+                return minimax(depth, isMax, copyBoard(playBoard));
+            }
+
+            else{
+                if(isMax){
+                    int maxValue = Integer.MIN_VALUE;
+                    List<minimaxTaskCut> threads = new ArrayList<>();
+                    for(int i = 0; i < range; i++) {
+                        for(int j = 0; j < range; j++){
+                            if(playBoard[i][j] == 0){
+                                playBoard[i][j] = 1;
+                                threads.add(new minimaxTaskCut(depth - 1, false, playBoard));
+                                playBoard[i][j] = 0;
+                            }
+                        }
+                    }
+                    for(int i = 0; i < threads.size() - 1; i++){
+                        threads.get(i).fork();
+                    }
+                    int last = threads.get(threads.size() - 1).compute();
+                    maxValue = Math.max(maxValue, last);
+
+                    for(int i = 0; i < threads.size() - 1; i++){
+                        int cur = threads.get(i).join();
+                        maxValue = Math.max(maxValue, cur);
+                    }
+                    return maxValue;
+                }else{
+                    int minValue = Integer.MAX_VALUE;
+                    List<minimaxTaskCut> threads = new ArrayList<>();
+                    for(int i = 0; i < range; i++) {
+                        for(int j = 0; j < range; j++){
+                            if(playBoard[i][j] == 0){
+                                playBoard[i][j] = -1;
+                                threads.add(new minimaxTaskCut(depth - 1, true, playBoard));
+                                playBoard[i][j] = 0;
+                            }
+                        }
+                    }
+                    for(int i = 0; i < threads.size() - 1; i++){
+                        threads.get(i).fork();
+                    }
+                    int last = threads.get(threads.size() - 1).compute();
+                    minValue = Math.min(minValue, last);
+
+                    for(int i = 0; i < threads.size() - 1; i++){
+                        int cur = threads.get(i).join();
+                        minValue = Math.min(minValue, cur);
+
+                    }
+                    return minValue;
+                }
+            }
+        }
+    }
+
+    private class minimaxTaskABCut extends RecursiveTask<Integer>{
+        private static final int SEQUENTIAL_CUTOFF = 8;
+        private int depth;
+        private boolean isMax;
+        private int alpha, beta;
+        private int[][] playBoard;
+        private int boardValue;
+
+        public minimaxTaskABCut(int d, boolean m, int a, int b, int[][] p){
+            depth = d;
+            isMax = m;
+            alpha = a;
+            beta = b;
+            playBoard = copyBoard(p);
+            boardValue = evaluate2(playBoard);
+        }
+
+        private int[][] copyBoard(int[][] p){
+            int[][] result = new int[p.length][p.length];
+            for(int i = 0; i < result.length; i++){
+                for(int j = 0; j < result.length; j++){
+                    result[i][j] = p[i][j];
+                }
+            }
+            return result;
+        }
+
+        private boolean isFull(int[][] b){
+            for(int i = 0; i < b.length; i++){
+                for(int j = 0; j < b.length; j++){
+                    if(b[i][j] == 0) return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        protected Integer compute() {
+            if(depth < SEQUENTIAL_CUTOFF){
+                return minimaxAB(depth, isMax, copyBoard(playBoard), alpha, beta);
+            }
+            else{
+                if(isMax){
+                    int maxValue = Integer.MIN_VALUE;
+                    List<minimaxTaskABCut> threads = new ArrayList<>();
+                    for(int i = 0; i < range; i++) {
+                        for(int j = 0; j < range; j++){
+                            if(playBoard[i][j] == 0){
+                                playBoard[i][j] = 1;
+                                threads.add(new minimaxTaskABCut(depth - 1, false, alpha, beta, playBoard));
+                                playBoard[i][j] = 0;
+                            }
+                        }
+                    }
+                    for(int i = 0; i < threads.size() - 1; i++){
+                        threads.get(i).fork();
+                    }
+                    int last = threads.get(threads.size() - 1).compute();
+                    maxValue = Math.max(maxValue, last);
+                    if(maxValue >= beta){
+                        return maxValue;
+                    }else{
+                        alpha = Math.max(alpha, maxValue);
+                        for(int i = 0; i < threads.size() - 1; i++){
+                            int cur = threads.get(i).join();
+                            maxValue = Math.max(maxValue, cur);
+                            if(maxValue >= beta)
+                                break;
+                            alpha = Math.max(alpha, maxValue);
+                        }
+                        return maxValue;
+                    }
+                }else{
+                    int minValue = Integer.MAX_VALUE;
+                    List<minimaxTaskABCut> threads = new ArrayList<>();
+                    for(int i = 0; i < range; i++) {
+                        for(int j = 0; j < range; j++){
+                            if(playBoard[i][j] == 0){
+                                playBoard[i][j] = -1;
+                                threads.add(new minimaxTaskABCut(depth - 1, true, alpha, beta, playBoard));
                                 playBoard[i][j] = 0;
                             }
                         }
